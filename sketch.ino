@@ -378,7 +378,7 @@ bool reeling = false;
 int oldReelPos;
 int castStrength;
 int ovrProg;
-bool caught = false;
+bool cau = false;
 
 void setup() {
   Serial.begin(9600);
@@ -436,9 +436,10 @@ void loop() {
       if(inShop){
         buy(oldPos);
       }
-      if(caught){
+      if(cau){
+        cau = false;
+        casting = false;
         startFishing();
-        caught = false;
       }
       delay(5);
     }
@@ -656,6 +657,9 @@ void enter(int selection){
 
 void startFishing(){
   fishing = true;
+  casting = false; 
+  reeling = false;
+  
   playerAngle = 0;
   castStrength = 0;
   ovrProg = 0;
@@ -795,9 +799,9 @@ void reelLineR(int prog) {
 }
 
 void caught(){
-  caught = true;
+  cau = true;
   reeling = false;
-  display.clear();
+  display.clearDisplay();
   display.drawBitmap(0, 0, gotIt, 128, 64, WHITE);
   display.display();
   Serial.println("Caught a fish!");

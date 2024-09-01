@@ -305,6 +305,8 @@ int playerAngle = 0;
 int prev_CLK_state;
 bool casting = false;
 bool reeling = false;
+int oldReelPos;
+int castStrength;
 
 void setup() {
   Serial.begin(9600);
@@ -393,8 +395,17 @@ void loop() {
       if(adjustedMag > 0){
         cast(adjustedMag);
         casting = false;
+        oldReelPos = analogRead(slid);
       }
       delay(100);
+    }
+
+    if(reeling){
+      int newReelPos = analogRead(slid);
+      if(newReelPos != oldReelPos)
+        reel(analogRead(slid), oldReelPos);
+      oldReelPos = newReelPos;
+      delay(5);
     }
 
 
@@ -511,6 +522,8 @@ void openMenu(){
   inMenu = true;
   //Resets fishing stuf perhaps change later
   fishing = false;
+  casting = false;
+  reeling = false;
   playerAngle = 0;
   display.clearDisplay();
   display.setCursor(40, 0);
@@ -631,8 +644,6 @@ void line(int angle, int length){
   previousline [1] = 45;
   previousline [2] = 64+angle;
   previousline [3] = 0 + (45-length);
-  Serial.print("LINE AT: ");
-  Serial.println(angle);
   display.display();
 }
 
@@ -653,14 +664,39 @@ void rotatePlayerLeft(){
 void cast(double strength){
   Serial.println("CASTED");
   Serial.println(strength);
+  castStrength = strength;
   display.setCursor(0, 40);
   display.setTextSize(1);
   display.println("Cast");
   display.println("Strength:");
   display.println(strength);
   line(playerAngle, map(strength, 0, 100, 0, 45));
-  display.drawBitmap(0, 0, reelInst, 128, 64, BLACK);
+  display.drawBitmap(0, 0, reelInst, 128, 64, WHITE);
   display.display();
   reeling = true;
+  reelLineR(0);
 }
 
+void reel(int newMove, int oldMove){
+  int progress = abs(newMove - oldMove);
+  int reelProgress = map(progress, 0, 4095, 0, 25);
+  if(reelProgress > 0 && castStrength - reelProgress >= 0){
+    Serial.println(reelProgress);
+    castStrength -= reelProgress;
+    reelLineR(reelProgress);
+  }
+  else if(castStrength = 0){
+    caught();
+  }
+}
+
+void reelLineR(int prog){
+  int lineLength = sqrt(((previousline[2] - previousline[0])*(previousline[2] - previousline[0])) + ((previousline[3] - previousline[1])*(previousline[3] - previousline[1]))); 
+  Serial.println(lineLength);
+  //drawLine(previousLine[2], previousLine[3], previousLine[2] + castStrength, previousLine[3] + castStrength, BLACK);
+  //display.display();
+}
+
+void caught(){
+
+}
